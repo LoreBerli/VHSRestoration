@@ -114,7 +114,7 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(model_path)) #carica il modello con i parametri richiesti
 
     model = model.cuda() # sposta il modello su gpu
-    model.reparametrize() # attiva la parametrizzazione delle convoluzioni per ogni blocco
+    #model.reparametrize() # attiva la parametrizzazione delle convoluzioni per ogni blocco
 
     path = args.CLIPNAME #prendi il path del video
     cap = cv2.VideoCapture(path) #aquisisci il video

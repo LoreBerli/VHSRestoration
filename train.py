@@ -8,18 +8,21 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.CUDA_DEVICE
 import numpy as np
 import data_loader as dl
 import torch
+from torch.nn import functional as F
 from torch import nn as nn
 from torch.utils.data import DataLoader
 import pytorch_ssim  # courtesy of https://github.com/Po-Hsun-Su/pytorch-ssim
 import tqdm
 import lpips  # courtesy of https://github.com/richzhang/PerceptualSimilarity
-from models import Discriminator, \
+from models import Discriminator, DiscriminatorESRGAN,\
     SRResNet  # courtesy of https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Super-Resolution
 from pytorch_unet import SRUnet, UNet, SimpleResNet, SARUnet
+from rrdbnet import RRDBNet
 
 import wandb
 from datetime import datetime
 from torchvision import transforms
+
 
 
 if __name__ == '__main__':
@@ -33,14 +36,14 @@ if __name__ == '__main__':
     dataset_upscale_factor = args.UPSCALE_FACTOR
     n_epochs = args.N_EPOCHS
 
-    config = {"batch_size": 16, #fisso
-             "learning_rate": 1e-4, #fisso
+    config = {"batch_size": 4, #fisso
+             "learning_rate": 5e-5, #fisso
               "num_epochs": args.N_EPOCHS #da terminale
               }
-    id_string = args.ARCHITECTURE+" with n_filters "+str(args.N_FILTERS)+","+datetime.now().strftime('_%m-%d_%H-%M')+","+args.set+","+args.RES
+    id_string = args.ARCHITECTURE+"_nf_"+str(args.N_FILTERS)+"_"+datetime.now().strftime('_%m-%d_%H-%M')+"_"+args.set+"_"+args.RES
     wandb.config = config
     wandb.init(project='SuperRes', config=config, id=id_string,
-               entity="matteomarulli")
+               entity="cioni")
 
     if arch_name == 'srunet':
         model = SRUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
@@ -49,6 +52,9 @@ if __name__ == '__main__':
         model = UNet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS)
     elif arch_name == 'srgan':
         model = SRResNet()
+    elif arch_name == 'esrgan':
+        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=64,nb=6,downsample=args.DOWNSAMPLE)
+
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6)
     elif arch_name == 'sarunet':
@@ -66,13 +72,14 @@ if __name__ == '__main__':
 
     wandb.watch(model)
 
-    critic = Discriminator()
+    critic = DiscriminatorESRGAN()
     model = model.cuda()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    critic_opt = torch.optim.Adam(lr=1e-4, params=critic.parameters())
+    critic_opt = torch.optim.Adam(lr=8e-5, params=critic.parameters())
     gan_opt = torch.optim.Adam(lr=1e-4, params=model.parameters())
-
+    sched_c=torch.optim.lr_scheduler.StepLR(critic_opt,205*10,gamma=0.5)
+    sched_g = torch.optim.lr_scheduler.StepLR(gan_opt, 205 * 10, gamma=0.5)
     lpips_loss = lpips.LPIPS(net='vgg', version='0.1')
     lpips_alex = lpips.LPIPS(net='alex', version='0.1')
     ssim = pytorch_ssim.SSIM()
@@ -83,13 +90,13 @@ if __name__ == '__main__':
     critic.to(device)
 
     dataset_train = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=96, eval=False, use_ar=True,
-                                     res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR))
+                                     res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),rescale_factor=args.DOWNSAMPLE)
     dataset_test = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=96, eval=True, use_ar=True,
-                                    res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR))
+                                    res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),rescale_factor=args.DOWNSAMPLE)
 
-    data_loader = DataLoader(dataset=dataset_train, batch_size=16, num_workers=12, shuffle=True,
+    data_loader = DataLoader(dataset=dataset_train, batch_size=16, num_workers=4, shuffle=True,
                              pin_memory=True)
-    data_loader_eval = DataLoader(dataset=dataset_test, batch_size=16, num_workers=12, shuffle=True,
+    data_loader_eval = DataLoader(dataset=dataset_test, batch_size=16, num_workers=4, shuffle=True,
                                   pin_memory=True)
 
     loss_discriminator = nn.BCEWithLogitsLoss()
@@ -119,6 +126,10 @@ if __name__ == '__main__':
         tqdm_ = tqdm.tqdm(data_loader)
         step = 0
         for batch in tqdm_:
+            #if e ==0:
+            #    l0=0.00001 if step <1000 else min(args.L0,l0+0.00001)
+            #else:
+            l0=args.L0
             model.train()
             critic.train()
             critic_opt.zero_grad()
@@ -139,11 +150,11 @@ if __name__ == '__main__':
             pred_true = critic(y_true)
 
             # forward pass on true
-            loss_true = loss_discriminator(pred_true, torch.ones_like(pred_true))
+            loss_true = torch.mean(F.relu(1.0-pred_true))#loss_discriminator(pred_true, torch.ones_like(pred_true))
 
             # then updates on fakes
             pred_fake = critic(y_fake.detach())
-            loss_fake = loss_discriminator(pred_fake, torch.zeros_like(pred_fake))
+            loss_fake = torch.mean(F.relu(1.0+pred_fake))#loss_discriminator(pred_fake, torch.zeros_like(pred_fake))
 
             loss_discr = loss_true + loss_fake
             loss_discr *= 0.5
@@ -160,14 +171,14 @@ if __name__ == '__main__':
             lpips_loss_ = lpips_loss(y_fake, y_true).mean()
             ssim_loss = 1.0 - ssim(y_fake, y_true)
             pred_fake = critic(y_fake)
-            bce = loss_discriminator(pred_fake, torch.ones_like(pred_fake)) #propobabilità dei falsi di essere scambiati per veri
+            bce = torch.mean(-pred_fake)#loss_discriminator(pred_fake, torch.ones_like(pred_fake)) #propobabilità dei falsi di essere scambiati per veri
             loss_gen = w0 * lpips_loss_ + w1 * ssim_loss + l0 * bce #loss proposta da minimizzare (però nel paper ssim
 
             loss_gen.backward() #retropagazione degli errori per aggiornare i pesi del generatore secondo la loss proposta
             gan_opt.step() #aggiornamenti dei gradienti
 
             tqdm_.set_description(
-                'Loss discr: {}; Content loss: {}; BCE component / L0: {}'.format(loss_discr,
+                'L discr: {}; C loss: {}; BCE/L0: {}'.format(loss_discr,
                                                                                   float(loss_gen) - float(
                                                                                       l0 * loss_bce_gen),
                                                                                   float(loss_bce_gen)))
@@ -219,7 +230,8 @@ if __name__ == '__main__':
             torch.save(model.state_dict(),
                        args.EXPORT_DIR+'/'+'{0}_epoch{1}_ssim{2:.4f}_lpips{3:.4f}_res{4}.pkl'.format(arch_name, e, ssim_mean, lpips_mean,
                                                                                  args.RES))
-
+            sched_c.step()
+            sched_g.step()
             # having critic's weights saved was not useful, better sparing storage!
             # torch.save(critic.state_dict(), 'critic_gan_{}.pkl'.format(e + starting_epoch))
 

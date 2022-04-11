@@ -11,7 +11,7 @@ class ARArgs:
                         help="Dir from where to import the datasets")
         ap.add_argument("-m", "--model", type=str, default=None,
                         help="path to *specific* model checkpoint to load")
-        ap.add_argument("-dv", "--device", type=str, default="0",
+        ap.add_argument("-dv", "--device", type=str, default="0,1",
                         help="CUDA device to be used. For info type '$ nvidia-smi'")
         ap.add_argument("-v", "--verbose", action='store_true', default=False,
                         help="Verbosity mode.")
@@ -19,23 +19,23 @@ class ARArgs:
                         help="Where to store/load video patches.")
         ap.add_argument("--export", type=str, default="",
                         help="Where to export models.")
-        ap.add_argument("-e", "--epochs", type=int, default=80,
+        ap.add_argument("-e", "--epochs", type=int, default=30,
                         help="Number of epochs you want to train the model.")
         ap.add_argument("--clipname", type=str, default="",
                         help="[RENDER.PY ONLY] path to the clip you want to upscale")
-        ap.add_argument("--arch", type=str, default="sarunet", choices=archs,
+        ap.add_argument("--arch", type=str, default="esrgan", choices=archs,
                         help="Which network architecture to train.")
         ap.add_argument("--w0", type=float, default=1.0,
                         help="LPIPS weight") #peso della loss lpips nella loss proposta
         ap.add_argument("--w1", type=float, default=1.0,
                         help="SSIM Weight") #peso della loss ssim nella loss proposta
-        ap.add_argument("--l0", type=float, default=0.001,
+        ap.add_argument("--l0", type=float, default=0.02,
                         help="Adversarial Component Weight") #
-        ap.add_argument("--upscale", type=int, default=2,
+        ap.add_argument("--upscale", type=int, default=3,
                         help="Default upscale factor, obbtained as resolution ratio between LQ and HQ samples")
         ap.add_argument("--layer_mult", type=float, default=1.0, help="Layer multiplier - SR UNet only")
         ap.add_argument("--n_filters", type=int, default=64, help="Net Number of filters param - SR UNet and UNet only")
-        ap.add_argument("--downsample", type=float, default=1.0, help="Downsample factor, SR Unet and UNet only")
+        ap.add_argument("--downsample", type=float, default=0.8910891089108911, help="Downsample factor, SR Unet and UNet only")
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
         ap.add_argument("--testinputres", type=int, default=540, help="[TEST ONLY] Input testing resolution")

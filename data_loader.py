@@ -7,7 +7,7 @@ import random
 from io import BytesIO
 from torchvision.transforms import functional
 from os.path import join
-
+import math
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
@@ -122,14 +122,17 @@ class ARDataLoader2(data.Dataset):
         self.ar = use_ar
         self.upscale_factor = dataset_upscale_factor
         self.rf = rescale_factor
+        random.seed(0)
 
-        hq_dir = path + "/HQ"
-        lq_dir = path + f"/LR_{res}/{set}"
-
+        hq_dir = path + "/Originali/frames/"#"/HQ""/HQ/"#
+        lq_dir = path + "/720p_NoPopLine/frames/"#/LR_FullHD/set1/"#f"/LR_{res}/{set}"
 
         self.hq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(hq_dir)], []))
         self.lq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(lq_dir)], []))
-
+        zipped = list(zip(self.hq_dir,self.lq_dir))
+        random.shuffle(zipped)
+        zipped =zipped[0:4096]
+        self.hq_dir,self.lq_dir = zip(*zipped)
         # count = sum([len(directory) for _, directory in self.hq_dir])
         count = len(self.hq_dir)
 
@@ -168,16 +171,19 @@ class ARDataLoader2(data.Dataset):
 
         # left, upper, right, and lower
         crop_pos = (w_pos, h_pos, w_pos + self.patch_size, h_pos + self.patch_size)
-        crop_pos_sr = (sf * w_pos, sf * h_pos, sf * (w_pos + self.patch_size), sf * (h_pos + self.patch_size))
+        #crop_pos_sr = (sf * w_pos, sf * h_pos, sf * (w_pos + self.patch_size), sf * (h_pos + self.patch_size))
+        crop_pos_sr = (math.floor(sf*0.8888888888888888 * w_pos), math.floor(sf*0.8888888888888888* h_pos), math.floor(sf*0.8910891089108911*(w_pos + self.patch_size)), math.floor(sf*0.8910891089108911 * (h_pos + self.patch_size)))
         hq = hq.crop(crop_pos_sr)
+        hq = hq.resize((256,256))
+
 
         if not self.ar:
             lq = hq.resize((self.patch_size, self.patch_size))
         else:
             lq = lq.crop(crop_pos)
 
-        if self.rf is not None:
-            hq = hq.resize((int(1.5 * self.patch_size), int(1.5 * self.patch_size)))
+        # if self.rf is not None:
+        #     hq = hq.resize((int(self.rf*self.upscale_factor * self.patch_size), int(self.rf*self.upscale_factor * self.patch_size)))
 
         if torch.rand(1) < 0.5:
             lq = functional.hflip(lq)

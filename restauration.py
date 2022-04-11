@@ -42,8 +42,8 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(model_path))
 
     model = model.cuda()
-    if  arch_name in ['srunet', 'sarunet']:
-       model.reparametrize()
+    #if  arch_name in ['srunet', 'sarunet']:
+    #   model.reparametrize()
 
     path = args.CLIPNAME
     cap = cv2.VideoCapture(path)
@@ -96,9 +96,9 @@ if __name__ == '__main__':
                 print(f"out.shape {out.shape}")
                 image_size = (splitFrame.shape[1], splitFrame.shape[0])
                 writer = cv2.VideoWriter("output/"+args.OUTPUT_NAME+"/video/" + args.OUTPUT_NAME + ".mp4",
-                                         cv2.VideoWriter_fourcc(*'mp4v'), 60, image_size)
+                                         cv2.VideoWriter_fourcc(*'mp4v'), 30, image_size)
 
-            if i%500==0:
+            if i%100==0:
                 cv2.imwrite("output/"+args.OUTPUT_NAME+"/frames/"f"_{i:03d}.jpg", splitFrame)
             writer.write(image=splitFrame)
 
