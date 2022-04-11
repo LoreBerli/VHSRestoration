@@ -19,6 +19,8 @@ class ARArgs:
                         help="Where to store/load video patches.")
         ap.add_argument("--export", type=str, default="",
                         help="Where to export models.")
+        ap.add_argument("--debug",action='store_true',default=False,help="no wandb upload")
+        ap.add_argument("--patch_size", type=int,default=64,help="patch entry size")
         ap.add_argument("-e", "--epochs", type=int, default=30,
                         help="Number of epochs you want to train the model.")
         ap.add_argument("--clipname", type=str, default="",
@@ -35,9 +37,11 @@ class ARArgs:
                         help="Default upscale factor, obbtained as resolution ratio between LQ and HQ samples")
         ap.add_argument("--layer_mult", type=float, default=1.0, help="Layer multiplier - SR UNet only")
         ap.add_argument("--n_filters", type=int, default=64, help="Net Number of filters param - SR UNet and UNet only")
-        ap.add_argument("--downsample", type=float, default=0.8910891089108911, help="Downsample factor, SR Unet and UNet only")
+        ap.add_argument("--downsample", type=float, default=0.8888889, help="Downsample factor, SR Unet and UNet only")
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
+        ap.add_argument("--lr",type=float,default=1e-4,help="learning_rate")
+        ap.add_argument("--batch_size",type=int,default=4)
         ap.add_argument("--testinputres", type=int, default=540, help="[TEST ONLY] Input testing resolution")
         ap.add_argument("--testoutputres", type=int, default=1080, help="[TEST ONLY] Output testing resolution")
         ap.add_argument("--res", type=str, default="405", help="Reference for the resolution of the dataset")
@@ -64,6 +68,7 @@ class ARArgs:
         self.W0 = args['w0']
         self.W1 = args['w1']
         self.L0 = args['l0']
+        self.DEBUG = args['debug']
         self.UPSCALE_FACTOR = args['upscale']
         self.LAYER_MULTIPLIER = args['layer_mult']
         self.N_FILTERS = args['n_filters']
@@ -72,10 +77,12 @@ class ARArgs:
         self.TEST_OUTPUT_RES = args['testoutputres']
         self.RES = args['res']
         self.set=args['set']
+        self.BATCH_SIZE = args['batch_size']
+        self.LR = args["lr"]
         self.TEST_DIR = args['testdir']
         self.SHOW_ONLY_HQ = args['show-only-upscaled']
         self.OUTPUT_NAME = args['outputName']
-
+        self.PATCH_SIZE = args["patch_size"]
         self.archs = archs
 
 

@@ -174,7 +174,7 @@ class ARDataLoader2(data.Dataset):
         #crop_pos_sr = (sf * w_pos, sf * h_pos, sf * (w_pos + self.patch_size), sf * (h_pos + self.patch_size))
         crop_pos_sr = (math.floor(sf*0.8888888888888888 * w_pos), math.floor(sf*0.8888888888888888* h_pos), math.floor(sf*0.8910891089108911*(w_pos + self.patch_size)), math.floor(sf*0.8910891089108911 * (h_pos + self.patch_size)))
         hq = hq.crop(crop_pos_sr)
-        hq = hq.resize((256,256))
+        hq = hq.resize((int(self.patch_size*sf*self.rf),int(self.patch_size*sf*self.rf)))
 
 
         if not self.ar:

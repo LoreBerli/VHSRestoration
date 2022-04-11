@@ -36,13 +36,17 @@ if __name__ == '__main__':
     dataset_upscale_factor = args.UPSCALE_FACTOR
     n_epochs = args.N_EPOCHS
 
-    config = {"batch_size": 4, #fisso
-             "learning_rate": 5e-5, #fisso
-              "num_epochs": args.N_EPOCHS #da terminale
+
+    config = {"batch_size": args.BATCH_SIZE, #fisso
+             "learning_rate": args.LR, #fisso
+              "num_epochs": args.N_EPOCHS, #da terminale
+              "num_filters": args.N_FILTERS,
+              "patch_size": args.PATCH_SIZE
               }
-    id_string = args.ARCHITECTURE+"_nf_"+str(args.N_FILTERS)+"_"+datetime.now().strftime('_%m-%d_%H-%M')+"_"+args.set+"_"+args.RES
+    id_string = args.ARCHITECTURE+"nf_"+str(args.N_FILTERS)+"_"+datetime.now().strftime('_%m-%d_%H-%M')+"_"+str(args.PATCH_SIZE)+"_"+args.RES
     wandb.config = config
-    wandb.init(project='SuperRes', config=config, id=id_string,
+    mode = "disabled" if args.DEBUG else None
+    wandb.init(project='SuperRes', config=config, id=id_string,mode=mode,
                entity="cioni")
 
     if arch_name == 'srunet':
@@ -76,8 +80,8 @@ if __name__ == '__main__':
     model = model.cuda()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    critic_opt = torch.optim.Adam(lr=8e-5, params=critic.parameters())
-    gan_opt = torch.optim.Adam(lr=1e-4, params=model.parameters())
+    critic_opt = torch.optim.Adam(lr=args.LR/2.0, params=critic.parameters())
+    gan_opt = torch.optim.Adam(lr=args.LR, params=model.parameters())
     sched_c=torch.optim.lr_scheduler.StepLR(critic_opt,205*10,gamma=0.5)
     sched_g = torch.optim.lr_scheduler.StepLR(gan_opt, 205 * 10, gamma=0.5)
     lpips_loss = lpips.LPIPS(net='vgg', version='0.1')
@@ -89,14 +93,14 @@ if __name__ == '__main__':
     lpips_alex.to(device)
     critic.to(device)
 
-    dataset_train = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=96, eval=False, use_ar=True,
+    dataset_train = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=args.PATCH_SIZE, eval=False, use_ar=True,
                                      res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),rescale_factor=args.DOWNSAMPLE)
-    dataset_test = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=96, eval=True, use_ar=True,
+    dataset_test = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=args.PATCH_SIZE, eval=True, use_ar=True,
                                     res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),rescale_factor=args.DOWNSAMPLE)
 
-    data_loader = DataLoader(dataset=dataset_train, batch_size=16, num_workers=4, shuffle=True,
+    data_loader = DataLoader(dataset=dataset_train, batch_size=args.BATCH_SIZE, num_workers=4, shuffle=True,
                              pin_memory=True)
-    data_loader_eval = DataLoader(dataset=dataset_test, batch_size=16, num_workers=4, shuffle=True,
+    data_loader_eval = DataLoader(dataset=dataset_test, batch_size=args.BATCH_SIZE, num_workers=4, shuffle=True,
                                   pin_memory=True)
 
     loss_discriminator = nn.BCEWithLogitsLoss()
@@ -178,7 +182,7 @@ if __name__ == '__main__':
             gan_opt.step() #aggiornamenti dei gradienti
 
             tqdm_.set_description(
-                'L discr: {}; C loss: {}; BCE/L0: {}'.format(loss_discr,
+                'L discr: {:.5f}; C loss: {:.5f}; BCE/L0: {:.5f}'.format(loss_discr,
                                                                                   float(loss_gen) - float(
                                                                                       l0 * loss_bce_gen),
                                                                                   float(loss_bce_gen)))
