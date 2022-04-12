@@ -6,7 +6,7 @@ class ARArgs:
 
     def __init__(self, args=None):
         ap = argparse.ArgumentParser()
-        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan']
+        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan']
         ap.add_argument("-ds", "--dataset", type=str, default="",
                         help="Dir from where to import the datasets")
         ap.add_argument("-m", "--model", type=str, default=None,
@@ -41,7 +41,8 @@ class ARArgs:
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
         ap.add_argument("--lr",type=float,default=1e-4,help="learning_rate")
-        ap.add_argument("--batch_size",type=int,default=4)
+        ap.add_argument("--batch_size",type=int,default=16)
+        ap.add_argument("--ASPP_DWISE",action="store_true",default=True)
         ap.add_argument("--testinputres", type=int, default=540, help="[TEST ONLY] Input testing resolution")
         ap.add_argument("--testoutputres", type=int, default=1080, help="[TEST ONLY] Output testing resolution")
         ap.add_argument("--res", type=str, default="405", help="Reference for the resolution of the dataset")
@@ -83,6 +84,7 @@ class ARArgs:
         self.SHOW_ONLY_HQ = args['show-only-upscaled']
         self.OUTPUT_NAME = args['outputName']
         self.PATCH_SIZE = args["patch_size"]
+        self.ASPP_DWISE = args["ASPP_DWISE"]
         self.archs = archs
 
 

@@ -198,7 +198,7 @@ def sr_espcn(n_filters, scale_factor=2, out_channels=3, kernel_size=1):
 class SARUnet(nn.Module):
 
     def __init__(self, in_dim=3, n_class=3, downsample=None, residual=False, batchnorm=False, scale_factor=2,
-                 n_filters=64, layer_multiplier=1):
+                 n_filters=64, layer_multiplier=1,is_ASPP_DWISE=True):
         """
         Args:
             in_dim (float, optional):
@@ -245,7 +245,7 @@ class SARUnet(nn.Module):
             self.downsample = nn.Identity()
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
 
-        self.aspp_bridge = ASPP_DWISE(n_filters, n_filters)
+        self.aspp_bridge = ASPP_DWISE(n_filters, n_filters) if is_ASPP_DWISE else ASPP(n_filters,n_filters)
 
         self.squeeze_excite1 = Squeeze_Excite_Block(n_filters // 2)  # aggiunto squeeze_exicite
 

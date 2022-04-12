@@ -41,9 +41,13 @@ if __name__ == '__main__':
              "learning_rate": args.LR, #fisso
               "num_epochs": args.N_EPOCHS, #da terminale
               "num_filters": args.N_FILTERS,
-              "patch_size": args.PATCH_SIZE
+              "patch_size": args.PATCH_SIZE,
+              "arch": args.ARCHITECTURE,
+              "upscale": args.UPSCALE_FACTOR,
+              "downsample": args.DOWNSAMPLE,
+              "ASPP_DWISE": args.ASPP_DWISE
               }
-    id_string = args.ARCHITECTURE+"nf_"+str(args.N_FILTERS)+"_"+datetime.now().strftime('_%m-%d_%H-%M')+"_"+str(args.PATCH_SIZE)+"_"+args.RES
+    id_string = args.ARCHITECTURE+"_nf_"+str(args.N_FILTERS)+datetime.now().strftime('_%m-%d_%H-%M')+"_"+str(args.PATCH_SIZE)+"_"+args.RES
     wandb.config = config
     mode = "disabled" if args.DEBUG else None
     wandb.init(project='SuperRes', config=config, id=id_string,mode=mode,
@@ -57,13 +61,13 @@ if __name__ == '__main__':
     elif arch_name == 'srgan':
         model = SRResNet()
     elif arch_name == 'esrgan':
-        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=64,nb=6,downsample=args.DOWNSAMPLE)
+        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=args.N_FILTERS,nb=13,downsample=args.DOWNSAMPLE)
 
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6)
     elif arch_name == 'sarunet':
         model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
-                       downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
+                       downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER,is_ASPP_DWISE=args.ASPP_DWISE)
     else:
         raise Exception("Unknown architecture. Select one between:", args.archs)
 
