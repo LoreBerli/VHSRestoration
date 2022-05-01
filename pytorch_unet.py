@@ -158,7 +158,7 @@ class UnetBlock(nn.Module):
 
 def layer_generator_plus(in_channels, out_channels, use_batch_norm=False, use_bias=True, residual_block=True, n_blocks=3, inverted=False):
     n_blocks = int(n_blocks)
-    second_kernels=[7,7,5,3] if inverted else [7,7,5,3] #7,5,3  3,5,7
+    second_kernels=[7,5,3,3] if inverted else [7,3,3,3] #7,5,3  3,5,7
 
     first_layer = UnetBlock_plus(in_channels=in_channels, out_channels=out_channels, use_bn=use_batch_norm,
                                  use_residual=residual_block, second_kernel=second_kernels[0])

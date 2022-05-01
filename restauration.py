@@ -9,7 +9,7 @@ import utils
 from tqdm import tqdm
 import cv2
 from pytorch_unet import UNet, SRUnet, SimpleResNet, SARUnet
-
+from rrdbnet import RRDBNet
 
 def hconcat_resize_min(im_list, interpolation=cv2.INTER_CUBIC):
     h_min = min(im.shape[0] for im in im_list)
@@ -30,6 +30,8 @@ if __name__ == '__main__':
         model = UNet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS)
     elif arch_name == 'srgan':
         model = SRResNet()
+    elif arch_name == 'esrgan':
+        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=64,nb=23,downsample=args.DOWNSAMPLE)
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6)
     elif arch_name == 'sarunet':
@@ -84,8 +86,8 @@ if __name__ == '__main__':
             out = model(x)
 
             frametime = time.time() - t0
-            if frametime < target_frametime * 1e-3:
-                time.sleep(target_frametime * 1e-3 - frametime)
+            # if frametime < target_frametime * 1e-3:
+            #     time.sleep(target_frametime * 1e-3 - frametime)
             out_true = i // (target_fps * 3) % 2 == 0
 
             x = torchToCv2(x)
@@ -102,7 +104,7 @@ if __name__ == '__main__':
                 cv2.imwrite("output/"+args.OUTPUT_NAME+"/frames/"f"_{i:03d}.jpg", splitFrame)
             writer.write(image=splitFrame)
 
-            tqdm_.set_description("frame time: {}; fps: {}; {}".format(frametime * 1e3, 1000 / frametime, out_true))
+            tqdm_.set_description("frame time: {}; fps: {}; {}".format(frametime , 1 / frametime, out_true))
 
     writer.release()
     cap.release()

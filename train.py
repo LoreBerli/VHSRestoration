@@ -61,13 +61,13 @@ if __name__ == '__main__':
     elif arch_name == 'srgan':
         model = SRResNet()
     elif arch_name == 'esrgan':
-        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=args.N_FILTERS,nb=13,downsample=args.DOWNSAMPLE)
+        model = RRDBNet(3,3,scale=dataset_upscale_factor,nf=64,nb=23,downsample=args.DOWNSAMPLE)
 
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6)
     elif arch_name == 'sarunet':
         model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
-                       downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER,is_ASPP_DWISE=args.ASPP_DWISE)
+                       downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
     else:
         raise Exception("Unknown architecture. Select one between:", args.archs)
 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         model.load_state_dict(state_dict)
 
     print(model)
-
+    os.mkdir( args.EXPORT_DIR+"/"+id_string)
     wandb.watch(model)
 
     critic = DiscriminatorESRGAN()
@@ -235,8 +235,9 @@ if __name__ == '__main__':
                 "Loss SSIM - validation set": ssim_mean,
                 "Loss LPIPS (alex-net) - validation set": lpips_mean
             })
+
             torch.save(model.state_dict(),
-                       args.EXPORT_DIR+'/'+'{0}_epoch{1}_ssim{2:.4f}_lpips{3:.4f}_res{4}.pkl'.format(arch_name, e, ssim_mean, lpips_mean,
+                       args.EXPORT_DIR+"/"+id_string+'/'+'{0}_epoch{1}_ssim{2:.4f}_lpips{3:.4f}_res{4}.pkl'.format(arch_name, e, ssim_mean, lpips_mean,
                                                                                  args.RES))
             sched_c.step()
             sched_g.step()
