@@ -122,8 +122,10 @@ class ARDataLoader2(data.Dataset):
         self.ar = use_ar
         self.upscale_factor = dataset_upscale_factor
         self.rf = rescale_factor
+        #TODO seed hardcoded
         random.seed(0)
 
+        #TODO path hardcoded string; use pathlib
         hq_dir = path + "/Originali/frames/"#"/HQ""/HQ/"#
         lq_dir = path + "/720p_NoPopLine/frames/"#/LR_FullHD/set1/"#f"/LR_{res}/{set}"
 
@@ -131,6 +133,7 @@ class ARDataLoader2(data.Dataset):
         self.lq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(lq_dir)], []))
         zipped = list(zip(self.hq_dir,self.lq_dir))
         random.shuffle(zipped)
+        #TODO fixed size
         zipped =zipped[0:4096]
         self.hq_dir,self.lq_dir = zip(*zipped)
         # count = sum([len(directory) for _, directory in self.hq_dir])
@@ -172,6 +175,7 @@ class ARDataLoader2(data.Dataset):
         # left, upper, right, and lower
         crop_pos = (w_pos, h_pos, w_pos + self.patch_size, h_pos + self.patch_size)
         #crop_pos_sr = (sf * w_pos, sf * h_pos, sf * (w_pos + self.patch_size), sf * (h_pos + self.patch_size))
+        #TODO fix this shit
         crop_pos_sr = (math.floor(sf*0.8888888888888888 * w_pos), math.floor(sf*0.8888888888888888* h_pos), math.floor(sf*0.8910891089108911*(w_pos + self.patch_size)), math.floor(sf*0.8910891089108911 * (h_pos + self.patch_size)))
         hq = hq.crop(crop_pos_sr)
         hq = hq.resize((int(self.patch_size*sf*self.rf),int(self.patch_size*sf*self.rf)))

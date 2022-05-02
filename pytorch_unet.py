@@ -240,9 +240,11 @@ class SARUnet(nn.Module):
 
         self.maxpool = nn.MaxPool2d(2)
         if downsample is not None and downsample != 1.0:
+            #TODO scale factor hard-coded
             self.downsample = nn.Upsample(scale_factor=0.8888889, mode='bicubic', align_corners=True)
         else:
             self.downsample = nn.Identity()
+        #TODO bilinear vs bicubic
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
 
         self.aspp_bridge = ASPP_DWISE(n_filters, n_filters) if is_ASPP_DWISE else ASPP(n_filters,n_filters)
