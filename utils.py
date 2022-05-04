@@ -7,7 +7,9 @@ class ARArgs:
     def __init__(self, args=None):
         ap = argparse.ArgumentParser()
         archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan']
-        ap.add_argument("-ds", "--dataset", type=str, default="",
+        ap.add_argument("-hq_path", "--hq_dataset", type=str, default="",
+                        help="Dir from where to import the datasets")
+        ap.add_argument("-lq_path", "--lq_dataset", type=str, default="",
                         help="Dir from where to import the datasets")
         ap.add_argument("-m", "--model", type=str, default=None,
                         help="path to *specific* model checkpoint to load")
@@ -37,11 +39,13 @@ class ARArgs:
                         help="Default upscale factor, obbtained as resolution ratio between LQ and HQ samples")
         ap.add_argument("--layer_mult", type=float, default=1.0, help="Layer multiplier - SR UNet only")
         ap.add_argument("--n_filters", type=int, default=64, help="Net Number of filters param - SR UNet and UNet only")
+        #TODO check the downsample factor here
         ap.add_argument("--downsample", type=float, default=0.8888889, help="Downsample factor, SR Unet and UNet only")
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
         ap.add_argument("--lr",type=float,default=1e-4,help="learning_rate")
         ap.add_argument("--batch_size",type=int,default=16)
+        ap.add_argument("--seed",type=int,default=0)
         ap.add_argument("--ASPP_DWISE",action="store_true",default=True)
         ap.add_argument("--testinputres", type=int, default=540, help="[TEST ONLY] Input testing resolution")
         ap.add_argument("--testoutputres", type=int, default=1080, help="[TEST ONLY] Output testing resolution")
@@ -51,6 +55,7 @@ class ARArgs:
                         help="[RENDER.PY ONLY] If you want to show only the neural net upscaled version of the video")
         ap.add_argument("--outputName", type=str)
 
+
         if args is None:
             args = vars(ap.parse_args())
         else:
@@ -58,13 +63,15 @@ class ARArgs:
 
         self.MODEL_NAME = args['model']
         self.VERBOSE = args['verbose']
-        self.DATASET_DIR = Path(args['dataset'])
+        self.HQ_DATASET_DIR = Path(args['hq_dataset'])
+        self.LQ_DATASET_DIR = Path(args['lq_dataset'])
         self.CUDA_DEVICE = args['device']
         self.VID_PATCHES = args['vidpatches']
         self.EXPORT_DIR = args['export']
         self.N_EPOCHS = int(args['epochs'])
         self.CLIPNAME = args['clipname']
         self.ARCHITECTURE = args['arch']
+        self.SEED = args['seed']
         self.VALIDATION_FREQ = 1
         self.W0 = args['w0']
         self.W1 = args['w1']

@@ -95,12 +95,12 @@ if __name__ == '__main__':
     lpips_alex.to(device)
     critic.to(device)
 
-    dataset_train = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=args.PATCH_SIZE, eval=False, use_ar=True,
+    dataset_train = dl.ARDataLoader2(hq_path=args.HQ_DATASET_DIR,lq_path=args.LQ_DATASET_DIR, patch_size=args.PATCH_SIZE, eval=False, use_ar=True,
                                      res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),
-                                     rescale_factor=args.DOWNSAMPLE)
-    dataset_test = dl.ARDataLoader2(path=str(args.DATASET_DIR), patch_size=args.PATCH_SIZE, eval=True, use_ar=True,
+                                     rescale_factor=args.DOWNSAMPLE,seed=args.SEED)
+    dataset_test = dl.ARDataLoader2(hq_path=args.HQ_DATASET_DIR,lq_path=args.LQ_DATASET_DIR, patch_size=args.PATCH_SIZE, eval=True, use_ar=True,
                                     res=str(args.RES), set=args.set, dataset_upscale_factor=int(args.UPSCALE_FACTOR),
-                                    rescale_factor=args.DOWNSAMPLE)
+                                    rescale_factor=args.DOWNSAMPLE,seed=args.SEED)
 
     data_loader = DataLoader(dataset=dataset_train, batch_size=args.BATCH_SIZE, num_workers=4, shuffle=True,
                              pin_memory=True)
