@@ -1,7 +1,8 @@
 # from apex import amp
 import pandas as pd
 import utils, os
-
+import subprocess
+import json
 args = utils.ARArgs()
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = args.CUDA_DEVICE
@@ -56,16 +57,17 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6)
     elif arch_name == 'sarunet':
-        model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
+        model = SARUnet(3, residual=True, scale_factor=2, n_filters=args.N_FILTERS,
                         downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
     else:
         raise Exception("Unknown architecture. Select one between:", args.archs)
 
     print("Loading model: ", filename)
+    print(f"Skip model testing:{skip_model_testing}")
     state_dict = torch.load(filename)
     model.load_state_dict(state_dict)
     model = model.cuda()
-
+    #args.UPSCALE_FACTOR=1.0
     # model = amp.initialize(model, opt_level='O2')
 
     lpips_metric = lpips.LPIPS(net='alex')
@@ -80,14 +82,15 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
     else:
         crf_ = 23
 
-    #TODO fix me
     lq_file_path = str(test_dir_prefix) + f"/encoded{resolution_lq}CRF{crf_}/" + video_prefix + ".mp4"
+    print(f"##{lq_file_path}")
     cap_lq = cv2.VideoCapture(lq_file_path)
     video_size = cap_lq.get(cv2.CAP_PROP_BITRATE)  # os.path.getsize(lq_file_path) / 1e6
-    cap_hq = cv2.VideoCapture(str(test_dir_prefix) + f"/{video_prefix}" + ".mp4")#TODO fix me
+    time_length = cap_lq.get(cv2.CAP_PROP_FRAME_COUNT) / cap_lq.get(cv2.CAP_PROP_FPS)
+    cap_hq = cv2.VideoCapture(str(test_dir_prefix) + f"/{video_prefix}" + ".y4m")
 
-    gaussian_filter = utils.get_gaussian_kernel(sigma=0.5, kernel_size=5)#TODO fix me
-    gaussian_filter.to(device)#TODO fix me
+    gaussian_filter = utils.get_gaussian_kernel(sigma=0.5, kernel_size=5)
+    gaussian_filter.to(device)
 
     lq_queue = Queue(1)
     hq_queue = Queue(1)
@@ -261,7 +264,7 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
     out_dict['ssim'] = np.mean(ssim_)
     out_dict['lpips'] = np.mean(lpips_)
     out_dict['size'] = video_size
-    #out_dict['time'] = time_length
+    out_dict['time'] = time_length
 
     print("Mean ssim:", np.mean(ssim_))
     print("Mean lpips:", np.mean(lpips_))
@@ -292,45 +295,48 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
 
     from_second_ = from_second % 60
     to_second_ = to_second % 60
-
+    ffmpeg_path = "/media/cioni/Seagate/Downloads/ffmpeg-git-amd64-static/ffmpeg-git-20220526-amd64-static/ffmpeg"
     if output_generated and not skip_model_testing:
-        ffmpeg_command = f"ffmpeg -nostats -loglevel 0 -framerate {fps} -start_number 0 -i\
+        ffmpeg_command = f"{ffmpeg_path} -nostats -loglevel 0 -framerate {fps} -start_number 0 -i\
          {test_dir_prefix}/out/{video_prefix}_%d.png -crf 5  -c:v libx264 -r {fps} -pix_fmt yuv420p {dest_dir / 'output_testing.mp4 -y'}"
         print("Putting output images together.\n", ffmpeg_command)
         os.system(ffmpeg_command)
 
         ## test vmaf
-        vmaf_command = f"./ffmpeg -nostats -loglevel 0\
-            -r {fps} -i {dest_dir / (video_prefix + '.mp4')} \
+        vmaf_command = f"{ffmpeg_path} -nostats -loglevel 0 \
+            -r {fps} -i {dest_dir / (video_prefix + '.y4m')} \
             -r {fps} -i {dest_dir / 'output_testing.mp4'} \
             -ss 00:{from_minute}:{from_second_} -to 00:{to_minute}:{to_second_} \
             -lavfi '[0:v]setpts=PTS-STARTPTS[reference]; \
                 [1:v]scale=-1:{resolution_hq}:flags=bicubic,setpts=PTS-STARTPTS[distorted]; \
-                [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout' \
-            -f null - | grep -i 'aggregateVMAF'"
+                [distorted][reference]libvmaf=log_fmt=json:log_path=/dev/stdout' \
+            -f null -"
         print(vmaf_command)
-        out = os.popen(vmaf_command).read()
-
+        proc = subprocess.Popen(vmaf_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out = proc.communicate()
+        jsn = json.loads(out[0])
         # parse output
-        aggregate_vmaf = float(out.split(" ")[2][len('aggregateVMAF="'):-1])
+        print("###################",out,"###########")
+        aggregate_vmaf = jsn['pooled_metrics']['vmaf']['mean']#float(out.split(" ")[4][len('mean="'):-1])
 
         print("VMAF: ", aggregate_vmaf)
         out_dict['vmaf'] = aggregate_vmaf
 
         shutil.rmtree(test_dir_prefix + "/out")
     if test_lq:
-        vmaf_command = f"./ffmpeg -nostats -loglevel 0\
-                -r {fps} -i {dest_dir / (video_prefix + '.mp4')} \
+        vmaf_command = f"{ffmpeg_path} \
+                -r {fps} -i {dest_dir / (video_prefix + '.y4m')} \
                 -r {fps} -i {dest_dir / f'encoded{resolution_lq}CRF{crf_}' / (video_prefix + '.mp4')} \
                 -ss 00:{from_minute}:{from_second_} -to 00:{to_minute}:{to_second_} \
                 -lavfi '[0:v]setpts=PTS-STARTPTS[reference]; \
                     [1:v]scale=-1:{resolution_hq}:flags=bicubic,setpts=PTS-STARTPTS[distorted]; \
-                    [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout' \
-                -f null - | grep -i 'aggregateVMAF'"
+                    [distorted][reference]libvmaf=log_fmt=json:log_path=/dev/stdout' \
+                -f null -"
         print(vmaf_command)
-        out = os.popen(vmaf_command).read()
-        # parse output
-        aggregate_vmaf_x = float(out.split(" ")[2][len('aggregateVMAF="'):-1])
+        proc = subprocess.Popen(vmaf_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out = proc.communicate()
+        jsn = json.loads(out[0])
+        aggregate_vmaf_x = jsn['pooled_metrics']['vmaf']['mean']#float(out.split(" ")[2][len('mean="'):-1])
 
         print("VMAF base: ", aggregate_vmaf_x)
         out_dict['vmaf_encoded'] = aggregate_vmaf_x
@@ -342,30 +348,25 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
 
 if __name__ == '__main__':
     test_dir = Path(args.TEST_DIR)
-    print(os.listdir(test_dir))
-    videos = [vid.strip(".mp4") for vid in os.listdir(test_dir) if vid.endswith('.mp4')]
+    videos = [vid.strip(".y4m") for vid in os.listdir(test_dir) if vid.endswith('.y4m') and '1080' in vid]
 
     second_start = 0
     second_finish = 120  # test no more than the 2nd minutes - none of the test videos last so much
 
-    for res, filename in [
-        (args.RES, args.MODEL_NAME),
+    for crf, filename in [
+        (args.CRF, args.MODEL_NAME),
     ]:
-        print(f"Testing for res: {res}")
+        print(f"Testing CRF {crf}")
         output = []
-
 
         for i, vid in enumerate(videos):
             print(f"Testing: {vid}; {i + 1}/{len(videos)}")
             dict = evaluate_model(str(test_dir), video_prefix=vid, output_generated=True, filename=filename,
                                   from_second=second_start, test_lq=True, skip_model_testing=False,
-                                  to_second=second_finish, crf=res)
+                                  to_second=second_finish, crf=crf)
             output += [dict]
 
         df = pd.DataFrame(output)
         print(df.mean(axis=0, skipna=True))
-        print(f"filename: {filename}")
-        print(f"output[0]: {output}")
-        print(f"res: {res}")
-        name = filename.strip(".pkl") + f"_{output[0]['encode_res']}_{output[0]['dest_res']}_TEST_CRF{res}.csv"
+        name = filename.strip(".pkl") + f"_{output[0]['encode_res']}_{output[0]['dest_res']}_TEST_CRF{crf}.csv"
         df.to_csv(name)

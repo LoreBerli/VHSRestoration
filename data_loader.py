@@ -83,8 +83,8 @@ def _get_pics_in_subfolder(path, ext='.jpg'):
 
 
 class ARDataLoader2(data.Dataset):
-    def __init__(self, path, patch_size, res, set,eval=False, train_pct=0.8, use_ar=True, dataset_upscale_factor=2,
-                 rescale_factor=None):
+    def __init__(self, hq_path,lq_path, patch_size, res, set,eval=False, train_pct=0.8, use_ar=True, dataset_upscale_factor=2,
+                 rescale_factor=None,seed=None):
         """
         Custom dataloader for the training phase. The getitem method will return a couple (x, y), where x is the
         LowQuality input and y is the relative groundtruth. The relationship between the LQ and HQ samples depends on
@@ -117,26 +117,25 @@ class ARDataLoader2(data.Dataset):
         """
         self.patch_size = patch_size
         self.eval = eval
-        self.path = path
+
         self.train_pct = train_pct
         self.ar = use_ar
         self.upscale_factor = dataset_upscale_factor
         self.rf = rescale_factor
-        #TODO seed hardcoded
-        random.seed(0)
 
-        #TODO path hardcoded string; use pathlib
-        hq_dir = path + "/Originali/frames/"#"/HQ""/HQ/"#
-        lq_dir = path + "/720p_NoPopLine/frames/"#/LR_FullHD/set1/"#f"/LR_{res}/{set}"
+        if seed is not None:
+            random.seed(seed)
 
-        self.hq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(hq_dir)], []))
-        self.lq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(lq_dir)], []))
+        #self.hq_dir = hq_path#"/Originali/frames/"#"/HQ""/HQ/"#
+        #self.lq_dir = lq_path#"/720p_NoPopLine/frames/"#/LR_FullHD/set1/"#f"/LR_{res}/{set}"
+
+        self.hq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(hq_path)], []))
+        self.lq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(lq_path)], []))
         zipped = list(zip(self.hq_dir,self.lq_dir))
         random.shuffle(zipped)
         #TODO fixed size
-        zipped =zipped[0:4096]
+        zipped =zipped
         self.hq_dir,self.lq_dir = zip(*zipped)
-        # count = sum([len(directory) for _, directory in self.hq_dir])
         count = len(self.hq_dir)
 
         self.train_len = int(count * train_pct)

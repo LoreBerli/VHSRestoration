@@ -173,7 +173,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         tqdm_ = tqdm(range(frame_count))
         for i in tqdm_:
-            t0 = time.time()
+            t0 = time.perf_counter()
 
             x, x_bicubic = frame_queue.get() # prendi il frame dalla coda
             out = model(x)[:, :, :int(height) * 2, :int(width) * 2] #output del modello
@@ -183,7 +183,7 @@ if __name__ == '__main__':
             if not args.SHOW_ONLY_HQ:
                 out = blend_images(x_bicubic, out)
             out_queue.put(out)
-            frametime = time.time() - t0
+            frametime = time.perf_counter() - t0
             if frametime < target_frametime * 1e-3:
                 time.sleep(target_frametime * 1e-3 - frametime)
 
