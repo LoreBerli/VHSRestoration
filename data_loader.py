@@ -134,7 +134,7 @@ class ARDataLoader2(data.Dataset):
         zipped = list(zip(self.hq_dir,self.lq_dir))
         random.shuffle(zipped)
         #TODO fixed size
-        zipped =zipped[0:4096]
+        zipped =zipped
         self.hq_dir,self.lq_dir = zip(*zipped)
         count = len(self.hq_dir)
 

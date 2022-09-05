@@ -45,7 +45,7 @@ if __name__ == '__main__':
               "ASPP_DWISE": args.ASPP_DWISE
               }
     id_string = args.ARCHITECTURE + "_nf_" + str(args.N_FILTERS) + datetime.now().strftime('_%m-%d_%H-%M') + "_" + str(
-        args.PATCH_SIZE) + "_" + args.RES
+        args.PATCH_SIZE) + "_" + args.RES + "QF_23"
     wandb.config = config
     mode = "disabled" if args.DEBUG else None
     wandb.init(project='SuperRes', config=config, id=id_string, mode=mode,
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         model = SRUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
                        downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
     elif arch_name == 'unet':
-        model = UNet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS)
+        model = UNet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,downsample=args.DOWNSAMPLE)
     elif arch_name == 'srgan':
         model = SRResNet()
     elif arch_name == 'esrgan':

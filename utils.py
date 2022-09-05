@@ -35,7 +35,7 @@ class ARArgs:
                         help="SSIM Weight") #peso della loss ssim nella loss proposta
         ap.add_argument("--l0", type=float, default=0.02,
                         help="Adversarial Component Weight") #
-        ap.add_argument("--upscale", type=int, default=3,
+        ap.add_argument("--upscale", type=int, default=2,
                         help="Default upscale factor, obbtained as resolution ratio between LQ and HQ samples")
         ap.add_argument("--layer_mult", type=float, default=1.0, help="Layer multiplier - SR UNet only")
         ap.add_argument("--n_filters", type=int, default=64, help="Net Number of filters param - SR UNet and UNet only")
@@ -50,6 +50,7 @@ class ARArgs:
         ap.add_argument("--testinputres", type=int, default=540, help="[TEST ONLY] Input testing resolution")
         ap.add_argument("--testoutputres", type=int, default=1080, help="[TEST ONLY] Output testing resolution")
         ap.add_argument("--res", type=str, default="405", help="Reference for the resolution of the dataset")
+        ap.add_argument("--crf", type=int, default=23, help="Reference compression CRF")
         ap.add_argument("--set", type=str, default="set_01", help="Reference for the set of problems that your data have them")
         ap.add_argument('--show-only-upscaled', dest='show-only-upscaled', action='store_true',
                         help="[RENDER.PY ONLY] If you want to show only the neural net upscaled version of the video")
@@ -92,6 +93,7 @@ class ARArgs:
         self.OUTPUT_NAME = args['outputName']
         self.PATCH_SIZE = args["patch_size"]
         self.ASPP_DWISE = args["ASPP_DWISE"]
+        self.CRF = args['crf']
         self.archs = archs
 
 

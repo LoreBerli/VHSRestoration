@@ -1,0 +1,115 @@
+CRF18
+encode_res        540.000000
+dest_res         1080.000000
+ssim                0.773293
+lpips               0.157341
+size             7381.666667
+time               15.252889
+ssim_encoded        0.781927
+lpips_encoded       0.234049
+vmaf               90.822463
+vmaf_encoded       85.545108
+
+CRF21
+encode_res        540.000000
+dest_res         1080.000000
+ssim                0.758724
+lpips               0.168993
+size             4890.555556
+time               15.252889
+ssim_encoded        0.764069
+lpips_encoded       0.249414
+vmaf                  87.354537
+vmaf_encoded       82.078569
+
+CRF23
+encode_res        540.000000
+dest_res         1080.000000
+ssim                0.745854
+lpips               0.179580
+size             3686.777778
+time               15.252889
+ssim_encoded        0.749188
+lpips_encoded       0.262189
+vmaf               84.314058
+vmaf_encoded       79.042997
+
+CRF28
+encode_res        540.000000
+dest_res         1080.000000
+ssim                0.699609
+lpips               0.220343
+size             1750.555556
+time               15.252889
+ssim_encoded        0.699631
+lpips_encoded       0.304161
+vmaf               73.231854
+vmaf_encoded       68.383179
+
+CRF30
+encode_res        540.000000
+dest_res         1080.000000
+ssim                0.675565
+lpips               0.243500
+size             1282.111111
+time               15.252889
+ssim_encoded        0.674878
+lpips_encoded       0.325333
+vmaf               67.351301
+vmaf_encoded       62.843649
+
+
+CRF18 - 1080
+encode_res        1080.000000
+dest_res          1080.000000
+ssim                      NaN
+lpips                     NaN
+size             30758.888889
+time                15.252889
+ssim_encoded         0.870876
+lpips_encoded        0.076712
+vmaf_encoded        97.227430
+
+CRF21 - 1080
+encode_res        1080.000000
+dest_res          1080.000000
+ssim                      NaN
+lpips                     NaN
+size             17996.555556
+time                15.252889
+ssim_encoded         0.848894
+lpips_encoded        0.103519
+vmaf_encoded        95.261442
+
+CRF23 - 1080
+encode_res        1080.000000
+dest_res          1080.000000
+ssim                      NaN
+lpips                     NaN
+size             12815.333333
+time                15.252889
+ssim_encoded         0.835109
+lpips_encoded        0.119601
+vmaf_encoded        93.510012
+
+CRF 28 1080
+encode_res       1080.000000
+dest_res         1080.000000
+ssim                     NaN
+lpips                    NaN
+size             5718.555556
+time               15.252889
+ssim_encoded        0.792430
+lpips_encoded       0.160785
+vmaf_encoded       86.881566
+
+CRF30 -1080
+encode_res       1080.000000
+dest_res         1080.000000
+ssim                     NaN
+lpips                    NaN
+size             4137.666667
+time               15.252889
+ssim_encoded        0.770637
+lpips_encoded       0.180537
+vmaf_encoded       83.047513

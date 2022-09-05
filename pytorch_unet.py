@@ -12,22 +12,23 @@ from modules import AttentionBlock as AttentionBlock
 
 
 class SimpleResNet(nn.Module):
-    def __init__(self, n_filters, n_blocks):
+    def __init__(self, n_filters, n_blocks,upscale=3):
         super(SimpleResNet, self).__init__()
-        self.conv1 = UnetBlock_plus(in_channels=3, out_channels=n_filters, use_residual=True, use_bn=False)
-        convblock = [UnetBlock_plus(in_channels=n_filters, out_channels=n_filters, use_residual=True, use_bn=False) for _ in
+        self.conv1 = UnetBlock(in_channels=3, out_channels=n_filters, use_residual=True, use_bn=False)
+        convblock = [UnetBlock(in_channels=n_filters, out_channels=n_filters, use_residual=True, use_bn=False) for _ in
                      range(n_blocks - 1)]
         self.convblocks = nn.Sequential(*convblock)
-        self.sr = sr_espcn(n_filters, scale_factor=2, out_channels=3)
-        self.upscale = nn.Upsample(scale_factor=2, mode='bicubic', align_corners=True)
+        self.sr = sr_espcn(n_filters, scale_factor=upscale, out_channels=3)
+        self.upscale = nn.Upsample(scale_factor=upscale, mode='bicubic', align_corners=True)
+        self.downsample = nn.Upsample(scale_factor=0.8888889, mode='bicubic', align_corners=True)
         self.clip = nn.Hardtanh()
 
     def forward(self, input):
         x = self.conv1(input)
         x = self.convblocks(x)
         x = self.sr(x)
-
-        return self.clip(x + self.upscale(input))
+        x = self.clip(x + self.upscale(input))
+        return self.downsample(x)
 
     def reparametrize(self):
         for block in self.convblocks:
@@ -66,7 +67,6 @@ class UnetBlock_plus(nn.Module):
 
         # if in_channels == out_channels and use_residual:
         self.conv_adapter = nn.Conv2d(in_channels, out_channels, 1, padding=0)
-
         self.conv_final = nn.Conv2d(in_channels * 3, out_channels, kernel_size, padding=kernel_size // 2, stride=stride)
         self.squeezer = Squeeze_Excite_Block(in_channels*2,reduction=8)
         self.conv_1_1_expander = nn.Conv2d(in_channels, in_channels * 2, 1, padding=0, stride=1,bias=False)
@@ -501,18 +501,18 @@ class UNet(nn.Module):
         self.maxpool = nn.MaxPool2d(2)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
 
-        self.dconv_up3 = layer_generator_plus(n_filters * 8 + n_filters * 4, n_filters * 4, use_batch_norm=batchnorm,
+        self.dconv_up3 = layer_generator(n_filters * 8 + n_filters * 4, n_filters * 4, use_batch_norm=batchnorm,
                                               n_blocks=2)
-        self.dconv_up2 = layer_generator_plus(n_filters * 4 + n_filters * 2, n_filters * 2, use_batch_norm=batchnorm,
+        self.dconv_up2 = layer_generator(n_filters * 4 + n_filters * 2, n_filters * 2, use_batch_norm=batchnorm,
                                               n_blocks=2)
-        self.dconv_up1 = layer_generator_plus(n_filters * 2 + n_filters, n_filters, use_batch_norm=False, n_blocks=2)
+        self.dconv_up1 = layer_generator(n_filters * 2 + n_filters, n_filters, use_batch_norm=False, n_blocks=2)
 
-        sf = (self.scale_factor * (2 if self.use_s2d else 1))
+        sf = self.scale_factor#(self.scale_factor * (2 if self.use_s2d else 1))
 
         self.to_rgb = nn.Conv2d(n_filters, 3, kernel_size=1)
         if sf > 1:
-            self.conv_last = nn.Sequential([nn.Conv2d(n_filters,n_filters,7,1,3,groups=n_filters),
-                                            nn.Conv2d(n_filters, (sf ** 2) * n_class, kernel_size=1, padding=0)])
+            self.conv_last = nn.Sequential(nn.Conv2d(n_filters,n_filters,7,1,3,groups=n_filters),
+                                            nn.Conv2d(n_filters, (sf ** 2) * n_class, kernel_size=1, padding=0))
             self.pixel_shuffle = nn.PixelShuffle(sf)
         else:
             self.conv_last = nn.Conv2d(n_filters, 3, kernel_size=1)
@@ -553,7 +553,7 @@ class UNet(nn.Module):
 
         x = self.conv_last(x)
 
-        sf = (self.scale_factor * (2 if self.use_s2d else 1))
+        sf = self.scale_factor #(self.scale_factor * (2 if self.use_s2d else 1))
 
         if sf > 1:
             x = self.pixel_shuffle(x)
