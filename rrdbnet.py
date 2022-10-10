@@ -63,7 +63,7 @@ class RRDBNet(nn.Module):
         self.upconv2 = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
         self.HRconv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
         self.conv_last = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
-        self.downsample = nn.Upsample(scale_factor=0.8888889, mode='bicubic', align_corners=True)
+        self.downsample = nn.Upsample(scale_factor=downsample, mode='bicubic', align_corners=True)
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 
     def forward(self, x):

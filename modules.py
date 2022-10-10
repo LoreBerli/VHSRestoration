@@ -6,6 +6,7 @@ from functools import partial
 from einops.layers.torch import Rearrange, Reduce
 
 class ResidualConv(nn.Module):
+
     def __init__(self, input_dim, output_dim, stride, padding):
         super(ResidualConv, self).__init__()
 

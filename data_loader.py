@@ -117,7 +117,7 @@ class ARDataLoader2(data.Dataset):
         """
         self.patch_size = patch_size
         self.eval = eval
-
+        self.res=int(res)
         self.train_pct = train_pct
         self.ar = use_ar
         self.upscale_factor = dataset_upscale_factor
@@ -131,6 +131,7 @@ class ARDataLoader2(data.Dataset):
 
         self.hq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(hq_path)], []))
         self.lq_dir = sorted(sum([files_list for _, files_list in _get_pics_in_subfolder(lq_path)], []))
+
         zipped = list(zip(self.hq_dir,self.lq_dir))
         random.shuffle(zipped)
         #TODO fixed size
@@ -154,7 +155,9 @@ class ARDataLoader2(data.Dataset):
 
         hq = load_img(self.hq_dir[im_idx])
         lq = load_img(self.lq_dir[im_idx])
+        #TODO FIXME
 
+        #lq.thumbnail((self.res, self.res),Image.ANTIALIAS)
         w, h = lq.size
 
         if w > self.patch_size:
@@ -175,9 +178,12 @@ class ARDataLoader2(data.Dataset):
         crop_pos = (w_pos, h_pos, w_pos + self.patch_size, h_pos + self.patch_size)
         #crop_pos_sr = (sf * w_pos, sf * h_pos, sf * (w_pos + self.patch_size), sf * (h_pos + self.patch_size))
         #TODO fix this shit
-        crop_pos_sr = (math.floor(sf*0.8888888888888888 * w_pos), math.floor(sf*0.8888888888888888* h_pos), math.floor(sf*0.8910891089108911*(w_pos + self.patch_size)), math.floor(sf*0.8910891089108911 * (h_pos + self.patch_size)))
+        #crop_pos_sr = (math.floor(sf*0.8888888888888888 * w_pos), math.floor(sf*0.8888888888888888* h_pos), math.floor(sf*0.8910891089108911*(w_pos + self.patch_size)), math.floor(sf*0.8910891089108911 * (h_pos + self.patch_size)))
+        crop_pos_sr = (round(sf * self.rf * w_pos), round(sf * self.rf * h_pos),
+                       round(sf * self.rf * (w_pos + self.patch_size)),
+                       round(sf * self.rf * (h_pos + self.patch_size)))
         hq = hq.crop(crop_pos_sr)
-        hq = hq.resize((int(self.patch_size*sf*self.rf),int(self.patch_size*sf*self.rf)))
+        #hq = hq.resize((round(self.patch_size*sf*self.rf),round(self.patch_size*sf*self.rf)))
 
 
         if not self.ar:

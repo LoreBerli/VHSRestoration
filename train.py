@@ -18,7 +18,7 @@ from models import Discriminator, DiscriminatorESRGAN, \
     SRResNet  # courtesy of https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Super-Resolution
 from pytorch_unet import SRUnet, UNet, SimpleResNet, SARUnet
 from rrdbnet import RRDBNet
-
+from WarmupScheduler import GradualWarmupScheduler
 import wandb
 from datetime import datetime
 from torchvision import transforms
@@ -45,7 +45,7 @@ if __name__ == '__main__':
               "ASPP_DWISE": args.ASPP_DWISE
               }
     id_string = args.ARCHITECTURE + "_nf_" + str(args.N_FILTERS) + datetime.now().strftime('_%m-%d_%H-%M') + "_" + str(
-        args.PATCH_SIZE) + "_" + args.RES + "QF_23"
+        args.PATCH_SIZE) + "_" + args.RES
     wandb.config = config
     mode = "disabled" if args.DEBUG else None
     wandb.init(project='SuperRes', config=config, id=id_string, mode=mode,
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         model = RRDBNet(3, 3, scale=dataset_upscale_factor, nf=64, nb=23, downsample=args.DOWNSAMPLE)
 
     elif arch_name == 'espcn':
-        model = SimpleResNet(n_filters=64, n_blocks=6)
+        model = SimpleResNet(n_filters=64, n_blocks=6,upscale=dataset_upscale_factor,downsample=args.DOWNSAMPLE)
     elif arch_name == 'sarunet':
         model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
                         downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
@@ -84,8 +84,10 @@ if __name__ == '__main__':
 
     critic_opt = torch.optim.Adam(lr=args.LR / 2.0, params=critic.parameters())
     gan_opt = torch.optim.Adam(lr=args.LR, params=model.parameters())
-    sched_c = torch.optim.lr_scheduler.StepLR(critic_opt, 205 * 10, gamma=0.5)
-    sched_g = torch.optim.lr_scheduler.StepLR(gan_opt, 205 * 10, gamma=0.5)
+
+
+    sched_c = GradualWarmupScheduler(critic_opt,100,750,after_scheduler=torch.optim.lr_scheduler.LinearLR(critic_opt,1.0,0.2,total_iters=6000))#torch.optim.lr_scheduler.StepLR(critic_opt, 205, gamma=0.8)
+    sched_g = GradualWarmupScheduler(gan_opt,130,600,after_scheduler=torch.optim.lr_scheduler.LinearLR(gan_opt,1.0,0.2,total_iters=6000))#torch.optim.lr_scheduler.ChainedScheduler([torch.optim.lr_scheduler.LinearLR(gan_opt,)])#torch.optim.lr_scheduler.StepLR(gan_opt, 205, gamma=0.8)
     lpips_loss = lpips.LPIPS(net='vgg', version='0.1')
     lpips_alex = lpips.LPIPS(net='alex', version='0.1')
     ssim = pytorch_ssim.SSIM()
@@ -106,6 +108,7 @@ if __name__ == '__main__':
                              pin_memory=True)
     data_loader_eval = DataLoader(dataset=dataset_test, batch_size=args.BATCH_SIZE, num_workers=4, shuffle=True,
                                   pin_memory=True)
+
 
     loss_discriminator = nn.BCEWithLogitsLoss()
 
@@ -197,6 +200,8 @@ if __name__ == '__main__':
                            "Image_fast-sr-unet": [wandb.Image(im) for im in y_fake],
                            "Image_HQ": [wandb.Image(im) for im in y_true]})
             step += 1
+            sched_c.step(step)
+            sched_g.step(step)
 
         if (e + 1) % args.VALIDATION_FREQ == 0:
             print("Validation phase")
@@ -230,7 +235,6 @@ if __name__ == '__main__':
                        args.EXPORT_DIR + "/" + id_string + '/' + '{0}_epoch{1}_ssim{2:.4f}_lpips{3:.4f}_res{4}.pkl'.format(
                            arch_name, e, ssim_mean, lpips_mean,
                            args.RES))
-            sched_c.step()
-            sched_g.step()
+
             # having critic's weights saved was not useful, better sparing storage!
             # torch.save(critic.state_dict(), 'critic_gan_{}.pkl'.format(e + starting_epoch))

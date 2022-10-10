@@ -12,7 +12,7 @@ from modules import AttentionBlock as AttentionBlock
 
 
 class SimpleResNet(nn.Module):
-    def __init__(self, n_filters, n_blocks,upscale=3):
+    def __init__(self, n_filters, n_blocks,upscale=3,downsample=1.0):
         super(SimpleResNet, self).__init__()
         self.conv1 = UnetBlock(in_channels=3, out_channels=n_filters, use_residual=True, use_bn=False)
         convblock = [UnetBlock(in_channels=n_filters, out_channels=n_filters, use_residual=True, use_bn=False) for _ in
@@ -20,7 +20,7 @@ class SimpleResNet(nn.Module):
         self.convblocks = nn.Sequential(*convblock)
         self.sr = sr_espcn(n_filters, scale_factor=upscale, out_channels=3)
         self.upscale = nn.Upsample(scale_factor=upscale, mode='bicubic', align_corners=True)
-        self.downsample = nn.Upsample(scale_factor=0.8888889, mode='bicubic', align_corners=True)
+        self.downsample = nn.Upsample(scale_factor=downsample, mode='bicubic', align_corners=True)
         self.clip = nn.Hardtanh()
 
     def forward(self, input):
@@ -30,10 +30,10 @@ class SimpleResNet(nn.Module):
         x = self.clip(x + self.upscale(input))
         return self.downsample(x)
 
-    def reparametrize(self):
-        for block in self.convblocks:
-            if hasattr(block, 'conv_adapter'):
-                block.reparametrize_convs()
+    # def reparametrize(self):
+    #     for block in self.convblocks:
+    #         if hasattr(block, 'conv_adapter'):
+    #             block.reparametrize_convs()
 
 class RDB(nn.Module):
     def __init__(self, nf=64, gc=32, bias=True):
@@ -241,7 +241,7 @@ class SARUnet(nn.Module):
         self.maxpool = nn.MaxPool2d(2)
         if downsample is not None and downsample != 1.0:
             #TODO scale factor hard-coded
-            self.downsample = nn.Upsample(scale_factor=0.8888889, mode='bicubic', align_corners=True)
+            self.downsample = nn.Upsample(scale_factor=downsample, mode='bicubic', align_corners=True)
         else:
             self.downsample = nn.Identity()
         #TODO bilinear vs bicubic
@@ -346,7 +346,7 @@ class SARUnet(nn.Module):
 
 class SRUnet(nn.Module):
 
-    def __init__(self, in_dim=3, n_class=3, downsample=None, residual=False, batchnorm=False, scale_factor=2,
+    def __init__(self, in_dim=3, n_class=3, downsample=0.889, residual=False, batchnorm=False, scale_factor=3,
                  n_filters=64, layer_multiplier=1):
         """
         Args:
@@ -378,14 +378,14 @@ class SRUnet(nn.Module):
         self.n_class = n_class
         self.scale_factor = scale_factor
 
-        self.dconv_down1 = layer_generator_plus(in_dim, n_filters // 2, use_batch_norm=False,
-                                                n_blocks=2 * layer_multiplier)
-        self.dconv_down2 = layer_generator_plus(n_filters // 2, n_filters, use_batch_norm=batchnorm,
-                                                n_blocks=3 * layer_multiplier)
-        self.dconv_down3 = layer_generator_plus(n_filters, n_filters, use_batch_norm=batchnorm,
-                                                n_blocks=3 * layer_multiplier)
-        self.dconv_down4 = layer_generator_plus(n_filters, n_filters, use_batch_norm=batchnorm,
-                                                n_blocks=3 * layer_multiplier)
+        self.dconv_down1 = layer_generator(in_dim, n_filters // 2, use_batch_norm=False,
+                                           n_blocks=2 * layer_multiplier)
+        self.dconv_down2 = layer_generator(n_filters // 2, n_filters, use_batch_norm=batchnorm,
+                                           n_blocks=3 * layer_multiplier)
+        self.dconv_down3 = layer_generator(n_filters, n_filters, use_batch_norm=batchnorm,
+                                           n_blocks=3 * layer_multiplier)
+        self.dconv_down4 = layer_generator(n_filters, n_filters, use_batch_norm=batchnorm,
+                                           n_blocks=3 * layer_multiplier)
 
         self.maxpool = nn.MaxPool2d(2)
         if downsample is not None and downsample != 1.0:
@@ -394,17 +394,17 @@ class SRUnet(nn.Module):
             self.downsample = nn.Identity()
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
 
-        self.dconv_up3 = layer_generator_plus(n_filters + n_filters, n_filters, use_batch_norm=batchnorm,
-                                              n_blocks=3 * layer_multiplier)
-        self.dconv_up2 = layer_generator_plus(n_filters + n_filters, n_filters, use_batch_norm=batchnorm,
-                                              n_blocks=3 * layer_multiplier)
-        self.dconv_up1 = layer_generator_plus(n_filters + n_filters // 2, n_filters // 2, use_batch_norm=False,
-                                              n_blocks=3 * layer_multiplier)
+        self.dconv_up3 = layer_generator(n_filters + n_filters, n_filters, use_batch_norm=batchnorm,
+                                         n_blocks=3 * layer_multiplier)
+        self.dconv_up2 = layer_generator(n_filters + n_filters, n_filters, use_batch_norm=batchnorm,
+                                         n_blocks=3 * layer_multiplier)
+        self.dconv_up1 = layer_generator(n_filters + n_filters // 2, n_filters // 2, use_batch_norm=False,
+                                         n_blocks=3 * layer_multiplier)
 
         self.layers = [self.dconv_down1, self.dconv_down2, self.dconv_down3, self.dconv_down4, self.dconv_up3,
                        self.dconv_up2, self.dconv_up1]
 
-        sf = self.scale_factor
+        sf = int(self.scale_factor)
 
         self.to_rgb = nn.Conv2d(n_filters // 2, 3, kernel_size=1)
         if sf > 1:
@@ -442,7 +442,7 @@ class SRUnet(nn.Module):
 
         x = self.conv_last(x)
 
-        sf = self.scale_factor
+        sf = int(self.scale_factor)
 
         if sf > 1:
             x = self.pixel_shuffle(x)
@@ -493,10 +493,10 @@ class UNet(nn.Module):
         self.n_class = n_class
         self.scale_factor = scale_factor
 
-        self.dconv_down1 = layer_generator_plus(in_dim, n_filters, use_batch_norm=False)
-        self.dconv_down2 = layer_generator_plus(n_filters, n_filters * 2, use_batch_norm=batchnorm, n_blocks=2)
-        self.dconv_down3 = layer_generator_plus(n_filters * 2, n_filters * 4, use_batch_norm=batchnorm, n_blocks=2)
-        self.dconv_down4 = layer_generator_plus(n_filters * 4, n_filters * 8, use_batch_norm=batchnorm, n_blocks=2)
+        self.dconv_down1 = layer_generator(in_dim, n_filters, use_batch_norm=False)
+        self.dconv_down2 = layer_generator(n_filters, n_filters * 2, use_batch_norm=batchnorm, n_blocks=2)
+        self.dconv_down3 = layer_generator(n_filters * 2, n_filters * 4, use_batch_norm=batchnorm, n_blocks=2)
+        self.dconv_down4 = layer_generator(n_filters * 4, n_filters * 8, use_batch_norm=batchnorm, n_blocks=2)
 
         self.maxpool = nn.MaxPool2d(2)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')

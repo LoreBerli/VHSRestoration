@@ -43,7 +43,7 @@ class ARArgs:
         ap.add_argument("--downsample", type=float, default=0.8888889, help="Downsample factor, SR Unet and UNet only")
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
-        ap.add_argument("--lr",type=float,default=1e-4,help="learning_rate")
+        ap.add_argument("--lr",type=float,default=1e-6,help="learning_rate")
         ap.add_argument("--batch_size",type=int,default=16)
         ap.add_argument("--seed",type=int,default=0)
         ap.add_argument("--ASPP_DWISE",action="store_true",default=True)

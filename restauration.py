@@ -57,7 +57,7 @@ if __name__ == '__main__':
         model = RRDBNet(3, 3, scale=dataset_upscale_factor, nf=64, nb=23, downsample=args.DOWNSAMPLE)
 
     elif arch_name == 'espcn':
-        model = SimpleResNet(n_filters=64, n_blocks=6)
+        model = SimpleResNet(n_filters=64, n_blocks=6,upscale=dataset_upscale_factor, downsample=args.DOWNSAMPLE)
     elif arch_name == 'sarunet':
         model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
                         downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
@@ -81,10 +81,10 @@ if __name__ == '__main__':
     try:
 
         # creating a folder named data
-        if not os.path.exists("output/"+args.OUTPUT_NAME):
-            os.makedirs("output/"+args.OUTPUT_NAME)
-            os.makedirs("output/"+args.OUTPUT_NAME+"/frames")
-            os.makedirs("output/"+args.OUTPUT_NAME+"/video")
+        if not os.path.exists("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME):
+            os.makedirs("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME)
+            os.makedirs("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME+"/frames")
+            os.makedirs("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME+"/video")
 
     # if not created then raise error
     except OSError:
@@ -127,19 +127,19 @@ if __name__ == '__main__':
             if i==0:
                 print(f"out.shape {out.shape}")
                 image_size = (splitFrame.shape[1], splitFrame.shape[0])
-                writer = cv2.VideoWriter("output/"+args.OUTPUT_NAME+"/video/" + args.OUTPUT_NAME + ".mp4",
+                writer = cv2.VideoWriter("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME+"/video/" + args.OUTPUT_NAME + ".mp4",
                                          cv2.VideoWriter_fourcc(*'mp4v'), 30, image_size)
 
             if i%100==0:
-                cv2.imwrite("output/"+args.OUTPUT_NAME+"/frames/"f"_{i:03d}.jpg", splitFrame)
+                cv2.imwrite("/media/cioni/Seagate/vhs_hd/output/"+args.OUTPUT_NAME+"/frames/"f"_{i:03d}.jpg", splitFrame)
             writer.write(image=splitFrame)
 
             tqdm_.set_description("frame time: {}; fps: {}; {}".format(frametime , 1 / frametime, out_true))
 
     writer.release()
     cap.release()
-    mean_fps= np.mean(np.array(fps_a))
-    mean_tims = np.mean(np.array(times))
+    mean_fps= np.mean(np.array(fps_a[2:]))
+    mean_tims = np.mean(np.array(times[2:]))
     wandb.log({
         "fps": float(mean_fps),
         "times": float(mean_tims)
