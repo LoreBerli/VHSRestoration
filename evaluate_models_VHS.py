@@ -61,7 +61,7 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
     elif arch_name == 'espcn':
         model = SimpleResNet(n_filters=64, n_blocks=6,upscale=dataset_upscale_factor,downsample=args.DOWNSAMPLE)
     elif arch_name == 'sarunet':
-        model = SARUnet(3, residual=True, scale_factor=2, n_filters=args.N_FILTERS,
+        model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
                         downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
     else:
         raise Exception("Unknown architecture. Select one between:", args.archs)
@@ -87,7 +87,8 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
         crf_ = 23
 
     #lq_file_path = str(test_dir_prefix) + f"/encoded{resolution_lq}CRF{crf_}/" + video_prefix + ".mp4"
-    lq_file_path = str(test_dir_prefix) + f"/hdready/" + video_prefix
+
+    lq_file_path = str(test_dir_prefix) + f"/400/" + video_prefix
     print(f"##{lq_file_path}")
     cap_lq = cv2.VideoCapture(lq_file_path)
     video_size = cap_lq.get(cv2.CAP_PROP_BITRATE)  # os.path.getsize(lq_file_path) / 1e6
@@ -184,7 +185,7 @@ def evaluate_model(test_dir_prefix, output_generated, video_prefix, filename, fr
     padW = ((16 + border) - modW) % (16 + border)
     padH = ((16 + border) - modH) % (16 + border)
 
-    new_H = H_x + padH
+    new_H = H_x + 1#padH
     new_W = W_x + padW
 
 

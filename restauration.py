@@ -110,7 +110,7 @@ if __name__ == '__main__':
             cv2_im = cv2_im.cuda().float()
 
             x = dl.normalize_img(cv2_im / 255.).unsqueeze(0)
-            x = F.pad(x, [0, padW, 0, padH])
+            x = cv2.resize(x,(720,405),interpolation = cv2.INTER_AREA)#F.pad(x, [0, padW, 0, padH])
             out = model(x)
 
             frametime = time.perf_counter() - t0

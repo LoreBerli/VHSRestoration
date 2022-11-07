@@ -125,7 +125,7 @@ class ARDataLoader2(data.Dataset):
 
         if seed is not None:
             random.seed(seed)
-
+        print(hq_path,lq_path)
         #self.hq_dir = hq_path#"/Originali/frames/"#"/HQ""/HQ/"#
         #self.lq_dir = lq_path#"/720p_NoPopLine/frames/"#/LR_FullHD/set1/"#f"/LR_{res}/{set}"
 
@@ -157,8 +157,11 @@ class ARDataLoader2(data.Dataset):
         lq = load_img(self.lq_dir[im_idx])
         #TODO FIXME
 
-        #lq.thumbnail((self.res, self.res),Image.ANTIALIAS)
         w, h = lq.size
+        w_hq,h_hq = hq.size
+        if w != round(w_hq/(self.upscale_factor*self.rf)) or h != round(h_hq/(self.upscale_factor*self.rf)):
+            lq=lq.resize((round(w_hq/(self.upscale_factor*self.rf)), round(h_hq/(self.upscale_factor*self.rf))),Image.ANTIALIAS)
+
 
         if w > self.patch_size:
             w = w - self.patch_size
