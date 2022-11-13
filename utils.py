@@ -6,7 +6,7 @@ class ARArgs:
 
     def __init__(self, args=None):
         ap = argparse.ArgumentParser()
-        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan']
+        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan','sarunet_noplus']
         ap.add_argument("-hq_path", "--hq_dataset", type=str, default="",
                         help="Dir from where to import the datasets")
         ap.add_argument("-lq_path", "--lq_dataset", type=str, default="",

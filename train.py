@@ -16,7 +16,7 @@ import tqdm
 import lpips  # courtesy of https://github.com/richzhang/PerceptualSimilarity
 from models import Discriminator, DiscriminatorESRGAN, \
     SRResNet  # courtesy of https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Super-Resolution
-from pytorch_unet import SRUnet, UNet, SimpleResNet, SARUnet
+from pytorch_unet import SRUnet, UNet, SimpleResNet, SARUnet,SARUnet_np
 from rrdbnet import RRDBNet
 from WarmupScheduler import GradualWarmupScheduler
 import wandb
@@ -66,6 +66,10 @@ if __name__ == '__main__':
     elif arch_name == 'sarunet':
         model = SARUnet(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
                         downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
+    elif arch_name == 'sarunet_noplus':
+        model = SARUnet_np(3, residual=True, scale_factor=dataset_upscale_factor, n_filters=args.N_FILTERS,
+                        downsample=args.DOWNSAMPLE, layer_multiplier=args.LAYER_MULTIPLIER)
+
     else:
         raise Exception("Unknown architecture. Select one between:", args.archs)
 
