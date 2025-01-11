@@ -1,4 +1,4 @@
-# U-nets for Video restoration and visual quality enhancement of old footage
+# High-Speed Image Enhancement: Real-time Super-Resolution and Artifact Removal for Degraded Analog Footage
 
 <video src="pics/f10000-0180.mp4"></video>
 
@@ -13,6 +13,14 @@ https://github.com/user-attachments/assets/b8d84517-4d0f-4960-b6e2-b7ea0bc73325
 
 [![AI4Media](https://img.youtube.com/vi/FCY9JW-iUN0/0.jpg)](https://www.youtube.com/embed/FCY9JW-iUN0?si=hKigchXoQR0BGUMk)
 
+## Samples from real videos
+![micro](pics/_050.jpg)
+![senna](pics/_1950.jpg)
+![HongKong_2](pics/_1000.jpg)
+![HongKong_3](pics/_000.jpg)
+
+![1350](pics/_1350.jpg)
+![1100](pics/_1100.jpg)
 
 #### Requirements:
 
@@ -103,10 +111,3 @@ the upscaled and restored version.
 
 
 
-## Examples
-![senna](pics/_1950.jpg)
-![HongKong_2](pics/_1000.jpg)
-![HongKong_3](pics/_000.jpg)
-![HongKong_1](pics/hongKong_1.jpg)
-![HongKong_2](pics/hongKong_2.jpg)
-![HongKong_3](pics/hongKong_3.jpg)
