@@ -1,6 +1,7 @@
 # U-nets for Video restoration and visual quality enhancement of old footage
 <video src="pics/f10000-0180.mp4"></video>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/FCY9JW-iUN0?si=hKigchXoQR0BGUMk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![AI4Media](https://img.youtube.com/vi/FCY9JW-iUN0/0.jpg)](https://www.youtube.com/embed/FCY9JW-iUN0?si=hKigchXoQR0BGUMk)
+
 
 #### Requirements:
 
