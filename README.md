@@ -2,7 +2,13 @@
 
 <video src="pics/f10000-0180.mp4"></video>
 
+https://github.com/user-attachments/assets/120661b7-e982-4d1c-9f0a-ab02662d73ec
+
+
 <video src="pics/f10455-0621.mp4"></video>
+
+
+https://github.com/user-attachments/assets/b8d84517-4d0f-4960-b6e2-b7ea0bc73325
 
 
 [![AI4Media](https://img.youtube.com/vi/FCY9JW-iUN0/0.jpg)](https://www.youtube.com/embed/FCY9JW-iUN0?si=hKigchXoQR0BGUMk)
