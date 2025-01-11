@@ -1,7 +1,6 @@
 # U-nets for Video restoration and visual quality enhancement of old footage
-
-This repository contains the implementation of my thesis work. It is an architecture comprised with a GAN-based training procedure
-for obtaining a fast neural network which enable to restoration old footage or documentary.
+<video src="pics/f10000-0180.mp4"></video>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/FCY9JW-iUN0?si=hKigchXoQR0BGUMk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 #### Requirements:
 
@@ -97,13 +96,3 @@ the upscaled and restored version.
 ![HongKong_1](pics/hongKong_1.jpg)
 ![HongKong_2](pics/hongKong_2.jpg)
 ![HongKong_3](pics/hongKong_3.jpg)
-
-#### References:
-
-This code is the implementation of my Master Degree Thesis.
-You can found it on this repository on thesis folder.
-
-## Note:
-Unfortunatly for reason of space I can't upload the dataset.
-I have upload only the model checkpoint for set 1 and set 2.
-This repository and my code is a fork of this repository: https://github.com/fede-vaccaro/fast-sr-unet
