@@ -36,7 +36,7 @@ def write_to_video(pic, writer):
     writer.write(npimg)
 
 
-def get_padded_dim(H_x, W_x, border=0, mod=16):
+def get_padded_dim(H_x, W_x, border=0, mod=8):
     modH, modW = H_x % (mod + border), W_x % (mod + border)
     padW = ((mod + border) - modW) % (mod + border)
     padH = ((mod + border) - modH) % (mod + border)
@@ -64,7 +64,9 @@ def torchToCv2(pic, rescale_factor=1.0):
     if rescale_factor != 1.0:
         pic = F.interpolate(pic, scale_factor=rescale_factor, align_corners=True, mode='bicubic')
     pic = dl.de_normalize(pic.squeeze(0))
+    #pic = pic*255
     pic = pic.permute(1, 2, 0) * 255
+    #pic = pic+16
     npimg = pic.byte().cpu().numpy()
     npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB)
     return npimg
@@ -78,6 +80,13 @@ def blend_images(i1, i2):
     out = torch.cat([i1, i2], dim=3)
     return out
 
+#sarunet /media/cioni/Seagate/restoration/Thesis-U-nets-for-Video-restoration-and-visual-quality-enhancement-of-old-footage/models/sarunet_nf_64_09-08_13-27_128_405/last.pkl
+#--upscale
+# 2
+# --downsample
+# 1.3333333334
+#
+# srunet /media/cioni/Seagate/restoration/Thesis-U-nets-for-Video-restoration-and-visual-quality-enhancement-of-old-footage/models/srunet_nf_64_09-08_13-27_128_405/last.pkl
 
 if __name__ == '__main__':
     args = utils.ARArgs()
@@ -146,7 +155,8 @@ if __name__ == '__main__':
             cv2_im = cv2_im.cuda().float() #portalo nella gpu
 
             x = dl.normalize_img(cv2_im / 255.).unsqueeze(0) # normalizza e aumenta le dimensioni
-
+            # x = torch.clip(F.interpolate(x,size=, mode='bicubic'),
+            #                        min=-1, max=1)
             x_bicubic = torch.clip(F.interpolate(x, scale_factor=args.UPSCALE_FACTOR * args.DOWNSAMPLE, mode='bicubic'),
                                    min=-1, max=1)
 

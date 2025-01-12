@@ -6,7 +6,7 @@ class ARArgs:
 
     def __init__(self, args=None):
         ap = argparse.ArgumentParser()
-        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan','sarunet_noplus']
+        archs = ['srunet', 'unet', 'espcn', 'srresnet', 'sarunet', 'srgan','esrgan','sarunet_noplus','sarunet_ASPP']
         ap.add_argument("-hq_path", "--hq_dataset", type=str, default="",
                         help="Dir from where to import the datasets")
         ap.add_argument("-lq_path", "--lq_dataset", type=str, default="",
@@ -23,7 +23,7 @@ class ARArgs:
                         help="Where to export models.")
         ap.add_argument("--debug",action='store_true',default=False,help="no wandb upload")
         ap.add_argument("--patch_size", type=int,default=64,help="patch entry size")
-        ap.add_argument("-e", "--epochs", type=int, default=30,
+        ap.add_argument("-e", "--epochs", type=int, default=60,
                         help="Number of epochs you want to train the model.")
         ap.add_argument("--clipname", type=str, default="",
                         help="[RENDER.PY ONLY] path to the clip you want to upscale")
@@ -35,15 +35,15 @@ class ARArgs:
                         help="SSIM Weight") #peso della loss ssim nella loss proposta
         ap.add_argument("--l0", type=float, default=0.02,
                         help="Adversarial Component Weight") #
-        ap.add_argument("--upscale", type=int, default=2,
-                        help="Default upscale factor, obbtained as resolution ratio between LQ and HQ samples")
+        ap.add_argument("--upscale", type=int, default=3,
+                        help="Default upscale factor, obtained as resolution ratio between LQ and HQ samples")
         ap.add_argument("--layer_mult", type=float, default=1.0, help="Layer multiplier - SR UNet only")
         ap.add_argument("--n_filters", type=int, default=64, help="Net Number of filters param - SR UNet and UNet only")
         #TODO check the downsample factor here
         ap.add_argument("--downsample", type=float, default=0.8888889, help="Downsample factor, SR Unet and UNet only")
         ap.add_argument("--testdir", type=str, default="test",
                         help="[TEST ONLY] Where the test clips are contained.")
-        ap.add_argument("--lr",type=float,default=1e-6,help="learning_rate")
+        ap.add_argument("--lr",type=float,default=0.00004,help="learning_rate")
         ap.add_argument("--batch_size",type=int,default=16)
         ap.add_argument("--seed",type=int,default=0)
         ap.add_argument("--ASPP_DWISE",action="store_true",default=True)
@@ -109,6 +109,8 @@ def adjust_learning_rate(optimizer, shrink_factor):
     for param_group in optimizer.param_groups:
         param_group['lr'] = param_group['lr'] * shrink_factor
     print("The new learning rate is %f\n" % (optimizer.param_groups[0]['lr'],))
+
+#
 
 
 def show_tensor(t):
